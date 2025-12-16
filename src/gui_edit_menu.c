@@ -9,17 +9,29 @@ GtkWidget *
 gui_edit_menu_init(GtkApplication *app)
 {
 
-	GtkWidget *menubar = gtk_menu_bar_new();
+	// Create action
+	GSimpleAction *action_randfile = g_simple_action_new("randfile", NULL);
+	// Link action to function
+	g_action_map_add_action(G_ACTION_MAP(app), G_ACTION(action_randfile));
+	g_signal_connect(action_randfile, "activate", G_CALLBACK(gui_edit_add_random_file), NULL);
 
-	GtkWidget *file_menu = gtk_menu_new();
-	GtkWidget *file_item = gtk_menu_item_new_with_label("File");
-	gtk_menu_item_set_submenu(GTK_MENU_ITEM(file_item), file_menu);
+	// Create the two menus
+	GMenu *menu_model = g_menu_new();
+	GMenu *menu_file_model = g_menu_new();
 
-	GtkWidget *random_item = gtk_menu_item_new_with_label("Add random file");
-	g_signal_connect(random_item, "activate", G_CALLBACK(gui_edit_add_random_file), app);
-	gtk_menu_shell_append(GTK_MENU_SHELL(file_menu), random_item);
+	GMenuItem *menu_file_menu = g_menu_item_new("File", NULL);
+	GMenuItem *item_filerand
+		= g_menu_item_new("FileRand", "app.randfile"); // Link option to action
 
-	gtk_menu_shell_append(GTK_MENU_SHELL(menubar), file_item);
+	g_menu_append_item(menu_file_model, item_filerand);
 
-	return menubar;
+	// Make one menu the submenu of the other
+	g_menu_item_set_submenu(menu_file_menu, G_MENU_MODEL(menu_file_model));
+
+	g_menu_append_item(menu_model, menu_file_menu);
+
+	// Set menubar
+	gtk_application_set_menubar(GTK_APPLICATION(app), G_MENU_MODEL(menu_model));
+
+	return NULL;
 }
