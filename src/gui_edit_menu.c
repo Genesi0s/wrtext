@@ -22,7 +22,7 @@ gui_edit_menu_on_open(GSimpleAction *action, GVariant *parameter, gpointer user_
 	GtkWindow *parent = gtk_application_get_active_window(app);
 	char *path = file_dialog_open_file(parent);
 	if(path) {
-		g_print("Open selected: %s\n", path);
+		log_info(__FILE__, "Open selected: %s", path);
 		g_free(path);
 	}
 }
@@ -43,7 +43,7 @@ gui_edit_menu_on_save(GSimpleAction *action, GVariant *parameter, gpointer user_
 		FILE *f = fopen(path, "w");
 		if(f)
 			fclose(f);
-		g_print("Save selected: %s\n", path);
+		log_info(__FILE__, "Save selected: %s", path);
 		g_free(path);
 	}
 }

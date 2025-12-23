@@ -13,6 +13,9 @@ struct fd_cbdata {
 	char *result;	 // path
 };
 
+/* Prevent multiple dialogs: track the currently open native dialog. */
+static GtkNativeDialog *fd_current = NULL;
+
 static void
 fd_on_response(GtkNativeDialog *native, gint response, gpointer user_data)
 {
@@ -30,6 +33,10 @@ fd_on_response(GtkNativeDialog *native, gint response, gpointer user_data)
 
 	if(d->loop)
 		g_main_loop_quit(d->loop);
+
+	/* Clear the global current dialog pointer so another dialog can be opened. */
+	if(fd_current == native)
+		fd_current = NULL;
 }
 
 /**
@@ -40,6 +47,10 @@ fd_on_response(GtkNativeDialog *native, gint response, gpointer user_data)
 char *
 file_dialog_open_file(GtkWindow *parent)
 {
+	// Proctection to not open a second dialog
+	if(fd_current)
+		return NULL;
+
 	GtkFileChooserNative *native = gtk_file_chooser_native_new(
 		"Open File", parent, GTK_FILE_CHOOSER_ACTION_OPEN, "_Open", "_Cancel");
 
@@ -48,6 +59,9 @@ file_dialog_open_file(GtkWindow *parent)
 	cb->result = NULL;
 
 	g_signal_connect(native, "response", G_CALLBACK(fd_on_response), cb);
+
+	/// Current open dialog
+	fd_current = GTK_NATIVE_DIALOG(native);
 	gtk_native_dialog_show(GTK_NATIVE_DIALOG(native));
 	g_main_loop_run(cb->loop);
 
@@ -66,6 +80,10 @@ file_dialog_open_file(GtkWindow *parent)
 char *
 file_dialog_save_file(GtkWindow *parent, const char *suggested_name)
 {
+	/* If a dialog is already open, don't open another one. */
+	if(fd_current)
+		return NULL;
+
 	GtkFileChooserNative *native = gtk_file_chooser_native_new(
 		"Save File", parent, GTK_FILE_CHOOSER_ACTION_SAVE, "_Save", "_Cancel");
 
