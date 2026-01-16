@@ -4,6 +4,7 @@
 #include "gui_about.h"
 #include "gui_edit.h"
 #include "gui_settings.h"
+#include "logger.h"
 #include <gtk/gtk.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -21,11 +22,17 @@ gui_edit_menu_on_open(GSimpleAction *action, GVariant *parameter, gpointer user_
 {
 	GtkApplication *app = GTK_APPLICATION(user_data);
 	GtkWindow *parent = gtk_application_get_active_window(app);
+
+	// Disables parent!
+	gtk_widget_set_sensitive(GTK_WIDGET(parent), FALSE);
+
 	char *path = file_dialog_open_file(parent);
 	if(path) {
 		log_info(__FILE__, "Open selected: %s", path);
 		g_free(path);
 	}
+	// Enables parent!
+	gtk_widget_set_sensitive(GTK_WIDGET(parent), TRUE);
 }
 
 /**
@@ -39,6 +46,10 @@ gui_edit_menu_on_save(GSimpleAction *action, GVariant *parameter, gpointer user_
 {
 	GtkApplication *app = GTK_APPLICATION(user_data);
 	GtkWindow *parent = gtk_application_get_active_window(app);
+
+	// Disables parent!
+	gtk_widget_set_sensitive(GTK_WIDGET(parent), FALSE);
+
 	char *path = file_dialog_save_file(parent, NULL);
 	if(path) {
 		FILE *f = fopen(path, "w");
@@ -47,6 +58,8 @@ gui_edit_menu_on_save(GSimpleAction *action, GVariant *parameter, gpointer user_
 		log_info(__FILE__, "Save selected: %s", path);
 		g_free(path);
 	}
+	// Enables parent!
+	gtk_widget_set_sensitive(GTK_WIDGET(parent), TRUE);
 }
 
 GtkWidget *
