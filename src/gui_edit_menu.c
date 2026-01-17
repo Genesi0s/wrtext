@@ -3,6 +3,8 @@
 #include "file_dialog.h"
 #include "gui_about.h"
 #include "gui_edit.h"
+#include "gui_settings.h"
+#include "logger.h"
 #include <gtk/gtk.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -20,11 +22,17 @@ gui_edit_menu_on_open(GSimpleAction *action, GVariant *parameter, gpointer user_
 {
 	GtkApplication *app = GTK_APPLICATION(user_data);
 	GtkWindow *parent = gtk_application_get_active_window(app);
+
+	// Disables parent!
+	gtk_widget_set_sensitive(GTK_WIDGET(parent), FALSE);
+
 	char *path = file_dialog_open_file(parent);
 	if(path) {
 		log_info(__FILE__, "Open selected: %s", path);
 		g_free(path);
 	}
+	// Enables parent!
+	gtk_widget_set_sensitive(GTK_WIDGET(parent), TRUE);
 }
 
 /**
@@ -38,6 +46,10 @@ gui_edit_menu_on_save(GSimpleAction *action, GVariant *parameter, gpointer user_
 {
 	GtkApplication *app = GTK_APPLICATION(user_data);
 	GtkWindow *parent = gtk_application_get_active_window(app);
+
+	// Disables parent!
+	gtk_widget_set_sensitive(GTK_WIDGET(parent), FALSE);
+
 	char *path = file_dialog_save_file(parent, NULL);
 	if(path) {
 		FILE *f = fopen(path, "w");
@@ -46,6 +58,8 @@ gui_edit_menu_on_save(GSimpleAction *action, GVariant *parameter, gpointer user_
 		log_info(__FILE__, "Save selected: %s", path);
 		g_free(path);
 	}
+	// Enables parent!
+	gtk_widget_set_sensitive(GTK_WIDGET(parent), TRUE);
 }
 
 GtkWidget *
@@ -57,11 +71,14 @@ gui_edit_menu_init(GtkApplication *app)
 	GSimpleAction *action_open = g_simple_action_new("open", NULL);
 	GSimpleAction *action_save = g_simple_action_new("save", NULL);
 	GSimpleAction *action_about = g_simple_action_new("about", NULL);
+	GSimpleAction *action_settings = g_simple_action_new("settings", NULL);
 	// Link action to function
 	g_action_map_add_action(G_ACTION_MAP(app), G_ACTION(action_randfile));
 	g_action_map_add_action(G_ACTION_MAP(app), G_ACTION(action_open));
 	g_action_map_add_action(G_ACTION_MAP(app), G_ACTION(action_save));
 	g_action_map_add_action(G_ACTION_MAP(app), G_ACTION(action_about));
+	g_action_map_add_action(G_ACTION_MAP(app), G_ACTION(action_settings));
+
 	g_signal_connect(action_randfile, "activate", G_CALLBACK(gui_edit_add_random_file), NULL);
 
 	// Open/save actions. Pass the GtkApplication as user_data so callbacks
@@ -71,18 +88,26 @@ gui_edit_menu_init(GtkApplication *app)
 	// Calls the function that activates the about window and passes it the main window
 	g_signal_connect(action_about, "activate", G_CALLBACK(gui_about_init),
 					 gtk_application_get_active_window(app));
+	g_signal_connect(action_settings, "activate", G_CALLBACK(gui_settings_init),
+					 gtk_application_get_active_window(app));
+
 	// Create the two menus
-	GMenu *menu_model = g_menu_new();
-	GMenu *menu_file_model = g_menu_new();
-	GMenu *menu_help_model = g_menu_new();
+	GMenu *menu_model = g_menu_new();	   // main
+	GMenu *menu_file_model = g_menu_new(); // file -> rand
+	GMenu *menu_help_model = g_menu_new(); // help -> about
+	GMenu *menu_edit_model = g_menu_new(); // edit -> settings
 
 	GMenuItem *menu_help_menu = g_menu_item_new("Help", NULL);
 	GMenuItem *menu_file_menu = g_menu_item_new("File", NULL);
+	GMenuItem *menu_edit_menu = g_menu_item_new("Edit", NULL);
+
+	// Items
 	GMenuItem *item_filerand
 		= g_menu_item_new("FileRand", "app.randfile"); // Link option to action
 	GMenuItem *item_open = g_menu_item_new("Open...", "app.open");
 	GMenuItem *item_save = g_menu_item_new("Save...", "app.save");
 	GMenuItem *item_about = g_menu_item_new("About", "app.about");
+	GMenuItem *item_settings = g_menu_item_new("Settings", "app.settings");
 
 	// Add File submenu and randfile item
 	g_menu_append_item(menu_file_model, item_open);
@@ -90,6 +115,11 @@ gui_edit_menu_init(GtkApplication *app)
 	g_menu_append_item(menu_file_model, item_filerand);
 	g_menu_item_set_submenu(menu_file_menu, G_MENU_MODEL(menu_file_model));
 	g_menu_append_item(menu_model, menu_file_menu);
+
+	// Add Edit submenu and Settings item
+	g_menu_append_item(menu_edit_model, item_settings);
+	g_menu_item_set_submenu(menu_edit_menu, G_MENU_MODEL(menu_edit_model));
+	g_menu_append_item(menu_model, menu_edit_menu);
 
 	// Add Help submenu and About item
 	g_menu_append_item(menu_help_model, item_about);

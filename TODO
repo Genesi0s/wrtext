@@ -1,2 +1,3 @@
 - Have the program take paths as arguments and automatically open those files
-- Add error handling for gui_edit.c and gui_edit_menu.c
+- replace malloc and free with glib's memory handling functions
+- implement a workaround for when the user closes the app with a save file dialog open
