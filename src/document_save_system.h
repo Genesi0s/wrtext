@@ -2,7 +2,7 @@
 
 /*!
 	@file document_save_system.h
-	@brief document_save_system.h and document_save_system.c handle operations involed with
+	@brief document_save_system.h and document_save_system.c handle operations involved with
 	loading and saving the state of documents. Entries are written in a custom binary format.
 
 */
