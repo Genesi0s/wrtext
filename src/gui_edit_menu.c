@@ -1,6 +1,7 @@
 #include "gui_edit_menu.h"
 #include "editor_file.h"
 #include "file_dialog.h"
+#include "fmanager.h"
 #include "gui_about.h"
 #include "gui_edit.h"
 #include "gui_settings.h"
@@ -28,7 +29,9 @@ gui_edit_menu_on_open(GSimpleAction *action, GVariant *parameter, gpointer user_
 
 	char *path = file_dialog_open_file(parent);
 	if(path) {
-		log_info(__FILE__, "Open selected: %s", path);
+		editor_file *ef = fmanager_load(path);
+		gui_edit_add_file(ef);
+		log_info(__FILE__, "Open selected: %s", ef->file_name);
 		g_free(path);
 	}
 	// Enables parent!
@@ -56,6 +59,8 @@ gui_edit_menu_on_save(GSimpleAction *action, GVariant *parameter, gpointer user_
 		if(f)
 			fclose(f);
 		log_info(__FILE__, "Save selected: %s", path);
+
+		// Implement file saving here
 		g_free(path);
 	}
 	// Enables parent!

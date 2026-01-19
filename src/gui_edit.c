@@ -162,6 +162,9 @@ gui_edit_init(GtkApplication *app)
 
 	notebook = gtk_notebook_new();
 
+	// Makes it scrollable
+	gtk_notebook_set_scrollable(GTK_NOTEBOOK(notebook), TRUE);
+
 	// Connects to switch page function
 	g_signal_connect(notebook, "switch-page", G_CALLBACK(notebook_on_switchpage), NULL);
 
@@ -190,6 +193,25 @@ gui_edit_init(GtkApplication *app)
 	gtk_window_present(GTK_WINDOW(window));
 
 	return window;
+}
+
+editor_file *
+gui_edit_get_selected_file()
+{
+
+	// Finds page number of opened page
+	gint page_num = gtk_notebook_get_current_page(GTK_NOTEBOOK(notebook));
+	// Finds widget of open page
+	GtkWidget *page = gtk_notebook_get_nth_page(GTK_NOTEBOOK(notebook), page_num);
+
+	// Find editor file from page widget. Iterate through all files
+	for(int i = 0; i < file_list.length; i++) {
+		if(file_list.page_widget[i] == page) {
+			return file_list.files[i];
+		}
+	}
+
+	return NULL; // No file selected
 }
 
 int
