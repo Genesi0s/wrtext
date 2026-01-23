@@ -12,8 +12,8 @@
 
 #define SETTINGS_FILE_NAME "settings.txt"
 
-int load_settings();
+int settings_file_load();
 
-int save_settings();
+int settings_file_save();
 
 #endif

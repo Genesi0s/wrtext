@@ -4,6 +4,7 @@
 #include "gui_edit_menu.h"
 #include "gui_settings.h"
 #include "logger.h"
+#include "settings_save_system.h"
 #include <gtk/gtk.h>
 #include <stdlib.h>
 #include <string.h>
@@ -138,6 +139,11 @@ log_file_list()
 GtkWidget *
 gui_edit_init(GtkApplication *app)
 {
+	// Load settings
+	int t = settings_file_load();
+	if(t != 1) {
+		log_err(__FILE__, "Error loading settings file");
+	}
 
 	// Initialize opened files structure
 	file_list.files = NULL;

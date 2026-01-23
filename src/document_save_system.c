@@ -8,7 +8,7 @@
 
 // Structure to store the document entries cleanly
 typedef struct {
-	uint64_t next;		 // how many bytes below the next document is stored
+	uint64_t next;		  // how many bytes below the next document is stored
 	uint16_t path_length; // length of path in bytes (max is 65536)
 } DocumentHeader;
 

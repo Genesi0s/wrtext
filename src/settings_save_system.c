@@ -53,7 +53,7 @@ strip_quotes(char *s)
 // Returns 0 for no file
 // Returns 1 for sucess
 int
-load_settings()
+settings_file_load()
 {
 	char *filename = get_data_path(SETTINGS_FILE_NAME);
 	FILE *file = fopen(filename, "r");
@@ -96,7 +96,7 @@ load_settings()
 						strncpy(entries[i].ptr, value, sizeof(settings.font) - 1);
 						((char *)entries[i].ptr)[sizeof(settings.font) - 1] = '\0';
 					}
-					printf("%s", value);
+					// printf("%s", value);
 					break;
 				}
 				break;
@@ -110,7 +110,7 @@ load_settings()
 
 // Gets the settings from the application settings and saves in the set file
 int
-save_settings()
+settings_file_save()
 {
 	char *filename = get_data_path(SETTINGS_FILE_NAME);
 	FILE *file = fopen(filename, "w");
@@ -135,7 +135,7 @@ save_settings()
 			fprintf(file, "%d", *(int *)entries[i].ptr);
 			break;
 		case SETTINGS_STRING:
-			fprintf(file, "\"%s\"", (char *)entries[i].ptr);
+			fprintf(file, "%s", (char *)entries[i].ptr);
 			break;
 		}
 		fprintf(file, "\n");
