@@ -2,7 +2,9 @@
  * Simple file dialog helpers using GtkFileChooserDialog
  */
 
-#pragma once
+#ifndef FILE_DIALOG_H
+#define FILE_DIALOG_H
+
 #include <gtk/gtk.h>
 
 /**
@@ -30,3 +32,20 @@ char *file_dialog_open_file(GtkWindow *parent);
  * @return char* Newly allocated path string or NULL.
  */
 char *file_dialog_save_file(GtkWindow *parent, const char *suggested_name);
+
+/**
+ * @brief Show a GTK file chooser dialog to create a new file.
+ *
+ * Presents a modal "Create File" dialog that lets the user pick a directory
+ * and type a filename. Overwrite confirmation is enabled to avoid
+ * accidental replacement. If the user accepts, the returned string is a
+ * newly allocated copy (use g_free() to free it). Returns NULL if the dialog
+ * was cancelled.
+ *
+ * @param parent Parent window for the dialog.
+ * @param suggested_name Suggested filename to pre-fill.
+ * @return char* Newly allocated path string or NULL.
+ */
+char *file_dialog_create_file(GtkWindow *parent, const char *suggested_name);
+
+#endif /* FILE_DIALOG_H */

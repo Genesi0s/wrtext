@@ -6,14 +6,17 @@
 #include "file_dialog.h"
 #include <gio/gio.h>
 #include <stdlib.h>
+#include <unistd.h>
 
-/* Internal helper for waiting for the native dialog response.(sychrone) */
+// Internal helper for waiting for the native dialog response(sychrone)
 struct fd_cbdata {
-	GMainLoop *loop; // block until reponse
-	char *result;	 // path
+	GtkFileChooserNative *native;
+	gint response;
+	gboolean done;
+	char *result;
 };
 
-/* Prevent multiple dialogs: track the currently open native dialog. */
+// Prevent multiple dialogs: track the currently open native dialog.
 static GtkNativeDialog *fd_current = NULL;
 
 static void
@@ -21,6 +24,7 @@ fd_on_response(GtkNativeDialog *native, gint response, gpointer user_data)
 {
 	struct fd_cbdata *d = user_data;
 
+	d->response = response;
 	if(response == GTK_RESPONSE_ACCEPT) {
 		GFile *file = gtk_file_chooser_get_file(GTK_FILE_CHOOSER(native));
 		if(file) {
@@ -31,10 +35,9 @@ fd_on_response(GtkNativeDialog *native, gint response, gpointer user_data)
 		}
 	}
 
-	if(d->loop)
-		g_main_loop_quit(d->loop);
+	d->done = TRUE;
 
-	/* Clear the global current dialog pointer so another dialog can be opened. */
+	/* Clear the global current dialog pointer. */
 	if(fd_current == native)
 		fd_current = NULL;
 }
@@ -47,27 +50,30 @@ fd_on_response(GtkNativeDialog *native, gint response, gpointer user_data)
 char *
 file_dialog_open_file(GtkWindow *parent)
 {
-	// Proctection to not open a second dialog
 	if(fd_current)
 		return NULL;
 
 	GtkFileChooserNative *native = gtk_file_chooser_native_new(
 		"Open File", parent, GTK_FILE_CHOOSER_ACTION_OPEN, "_Open", "_Cancel");
 
-	struct fd_cbdata *cb = g_new0(struct fd_cbdata, 1);
-	cb->loop = g_main_loop_new(NULL, FALSE);
-	cb->result = NULL;
-
-	g_signal_connect(native, "response", G_CALLBACK(fd_on_response), cb);
+	struct fd_cbdata cb = {0};
+	cb.native = native;
+	cb.done = FALSE;
+	cb.result = NULL;
 
 	/// Current open dialog
+	g_signal_connect(native, "response", G_CALLBACK(fd_on_response), &cb);
 	fd_current = GTK_NATIVE_DIALOG(native);
 	gtk_native_dialog_show(GTK_NATIVE_DIALOG(native));
-	g_main_loop_run(cb->loop);
 
-	char *result = cb->result;
-	g_main_loop_unref(cb->loop);
-	g_free(cb);
+	// Process events until dialog is done.
+	while(!cb.done) {
+		if(!g_main_context_pending(g_main_context_default()))
+			usleep(1000);
+		g_main_context_iteration(g_main_context_default(), FALSE);
+	}
+
+	char *result = cb.result;
 	g_object_unref(native);
 	return result;
 }
@@ -80,7 +86,7 @@ file_dialog_open_file(GtkWindow *parent)
 char *
 file_dialog_save_file(GtkWindow *parent, const char *suggested_name)
 {
-	/* If a dialog is already open, don't open another one. */
+	// If a dialog is already open, don't open another one.
 	if(fd_current)
 		return NULL;
 
@@ -90,17 +96,65 @@ file_dialog_save_file(GtkWindow *parent, const char *suggested_name)
 	if(suggested_name)
 		gtk_file_chooser_set_current_name(GTK_FILE_CHOOSER(native), suggested_name);
 
-	struct fd_cbdata *cb = g_new0(struct fd_cbdata, 1);
-	cb->loop = g_main_loop_new(NULL, FALSE);
-	cb->result = NULL;
+	struct fd_cbdata cb = {0};
+	cb.native = native;
+	cb.done = FALSE;
+	cb.result = NULL;
 
-	g_signal_connect(native, "response", G_CALLBACK(fd_on_response), cb);
+	g_signal_connect(native, "response", G_CALLBACK(fd_on_response), &cb);
+	fd_current = GTK_NATIVE_DIALOG(native);
 	gtk_native_dialog_show(GTK_NATIVE_DIALOG(native));
-	g_main_loop_run(cb->loop);
 
-	char *result = cb->result;
-	g_main_loop_unref(cb->loop);
-	g_free(cb);
+	/* Process events until dialog is done. */
+	while(!cb.done) {
+		if(!g_main_context_pending(g_main_context_default()))
+			usleep(1000);  /* 1ms sleep */
+		g_main_context_iteration(g_main_context_default(), FALSE);
+	}
+
+	char *result = cb.result;
+	g_object_unref(native);
+	return result;
+}
+
+/**
+ * @brief Show a blocking "Create File" dialog and return the chosen path.
+ *
+ * The returned string must be freed with g_free() by the caller.
+ */
+char *
+file_dialog_create_file(GtkWindow *parent, const char *suggested_name)
+{
+	if(fd_current)
+		return NULL;
+
+	GtkFileChooserNative *native = gtk_file_chooser_native_new(
+		"Create File", parent, GTK_FILE_CHOOSER_ACTION_SAVE, "_Create", "_Cancel");
+
+#if GTK_MAJOR_VERSION < 4
+	gtk_file_chooser_set_do_overwrite_confirmation(GTK_FILE_CHOOSER(native), TRUE);
+#endif
+
+	if(suggested_name)
+		gtk_file_chooser_set_current_name(GTK_FILE_CHOOSER(native), suggested_name);
+
+	struct fd_cbdata cb = {0};
+	cb.native = native;
+	cb.done = FALSE;
+	cb.result = NULL;
+
+	g_signal_connect(native, "response", G_CALLBACK(fd_on_response), &cb);
+	fd_current = GTK_NATIVE_DIALOG(native);
+	gtk_native_dialog_show(GTK_NATIVE_DIALOG(native));
+
+	// Process events until dialog is done
+	while(!cb.done) {
+		if(!g_main_context_pending(g_main_context_default()))
+			usleep(1000);
+		g_main_context_iteration(g_main_context_default(), FALSE);
+	}
+
+	char *result = cb.result;
 	g_object_unref(native);
 	return result;
 }

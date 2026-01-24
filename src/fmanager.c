@@ -23,18 +23,23 @@ fmanager_load(char *file_path)
 	fseek(f, 0, SEEK_SET);
 
 	editor_file *ef = calloc(1, sizeof(editor_file));
-	ef->contents = calloc(sizeof(char), fsize);
+	// Allocate at least one byte so empty files still have a valid buffer
+	size_t alloc_size = (fsize > 0) ? (size_t)fsize : 1;
+	ef->contents = calloc(sizeof(char), alloc_size);
 
-	// Reads file
-	if(fread(ef->contents, fsize, 1, f) != 1) {
+	// Reads file (only if size > 0)
+	if(fsize > 0 && fread(ef->contents, fsize, 1, f) != 1) {
 		log_err(__FILE__, "Error reading %s", file_path);
+		fclose(f);
+		free(ef->contents);
+		free(ef);
 		return NULL;
 	}
 
 	fclose(f); // Closes file
 
 	ef->size = fsize;
-	ef->file_path = file_path;
+	ef->file_path = strdup(file_path); // duplicates address otherwise could point to memory that has been freed
 
 	// finds filename
 	char *ls = file_path; // last slash
