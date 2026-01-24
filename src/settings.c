@@ -1,5 +1,6 @@
 #include "settings.h"
 #include "gui_edit.h"
+#include <gtk/gtk.h>
 #include <string.h>
 
 // Actual application settings, safely encapsulated.
@@ -27,4 +28,10 @@ settings_apply()
 {
 	settings_state s = settings_get();
 	gui_edit_set_wrap(s.textwrap);
+
+	// dark theme setting
+	GtkSettings *gtk_settings = gtk_settings_get_default();
+	if(gtk_settings) {
+		g_object_set(gtk_settings, "gtk-application-prefer-dark-theme", s.darkmode, NULL);
+	}
 }
