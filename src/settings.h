@@ -25,3 +25,7 @@ settings_state settings_get();
 */
 void settings_set(settings_state *s);
 
+/*!
+	@brief Applies the changes to the application based on the current application settings
+*/
+void settings_apply();

@@ -4,6 +4,7 @@
 #include "gui_edit_menu.h"
 #include "gui_settings.h"
 #include "logger.h"
+#include "settings.h"
 #include "settings_save_system.h"
 #include <gtk/gtk.h>
 #include <stdlib.h>
@@ -144,6 +145,7 @@ gui_edit_init(GtkApplication *app)
 	if(t != 1) {
 		log_err(__FILE__, "Error loading settings file");
 	}
+	settings_apply(); // applies settings
 
 	// Initialize opened files structure
 	file_list.files = NULL;
@@ -334,6 +336,11 @@ gui_edit_add_file(editor_file *f)
 	gtk_widget_set_hexpand(text_area, TRUE);
 	gtk_widget_set_vexpand(text_area, TRUE);
 
+	// Based on textwrap setting applies text wrap
+	settings_state s = settings_get();
+	gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(text_area),
+								s.textwrap == 1 ? GTK_WRAP_CHAR : GTK_WRAP_NONE);
+
 	// Loads text buffer into textarea
 	gtk_text_view_set_buffer(GTK_TEXT_VIEW(text_area), buff);
 
@@ -434,4 +441,16 @@ gui_edit_add_random_file(GSimpleAction *action, GVariant *parameter, gpointer us
 	gui_edit_add_file(fa);
 
 	called++;
+}
+
+void
+gui_edit_set_wrap(int b)
+{
+
+	// Loops through every page and sets the wrap
+	GtkWidget *tarea;
+	for(int i = 0; i < file_list.length; i++) {
+		tarea = gtk_scrolled_window_get_child(GTK_SCROLLED_WINDOW(file_list.page_widget[i]));
+		gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(tarea), b == 1 ? GTK_WRAP_CHAR : GTK_WRAP_NONE);
+	}
 }

@@ -41,6 +41,7 @@ on_checkboxes_toggled(GtkButton *button, gpointer user_data)
 	int r = settings_file_save(); // saves settings to file
 	if(r != 1)
 		log_err(__FILE__, "Error saving to settings file");
+	settings_apply(); // applies current settings
 
 	log_info(__FILE__, "toggled: %s", (char *)user_data);
 }
@@ -66,6 +67,8 @@ on_font_dialog_response(GtkDialog *dialog, int response_id, gpointer user_data)
 			int r = settings_file_save(); // saves settings to file
 			if(r != 1)
 				log_err(__FILE__, "Error saving to settings file");
+			settings_apply(); // applies current settings
+
 			// Update label on the font button
 			gtk_button_set_label(GTK_BUTTON(font_button), s.font);
 		} else {
