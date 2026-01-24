@@ -37,3 +37,7 @@ void gui_edit_cleanup();
 	@brief Just a debug function to add a file with random contets
 */
 void gui_edit_add_random_file(GSimpleAction *action, GVariant *parameter, gpointer user_data);
+
+editor_file *gui_edit_get_selected_file();
+
+void gui_edit_set_wrap(int b);

@@ -1,4 +1,5 @@
 #include "settings.h"
+#include "gui_edit.h"
 #include <string.h>
 
 // Actual application settings, safely encapsulated.
@@ -19,4 +20,11 @@ settings_set(settings_state *s)
 	t.linenums = s->linenums;
 	t.textwrap = s->textwrap;
 	t.whitespace = s->whitespace;
+}
+
+void
+settings_apply()
+{
+	settings_state s = settings_get();
+	gui_edit_set_wrap(s.textwrap);
 }

@@ -1,3 +1,18 @@
-- Have the program take paths as arguments and automatically open those files
+Main concerns:
+
+- Fix segfaults caused by opening files
+- Implement text-wrapping
+- Implement settings save and loading
+- Implement document state save and loading
+- Implement line numbers
+- Implement dark mode
+- Implement fonts
+- Write complete installing documentation
+- Create file dialog
+- Add a "Save without choosing path" option
+
+
+Minor fixes/improvements:
+
 - replace malloc and free with glib's memory handling functions
 - implement a workaround for when the user closes the app with a save file dialog open

@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['whitespace_0',['whitespace',['../structsettings__state.html#ab93a82f427af99e13a0e1ed852fe6f7c',1,'settings_state']]]
+  ['vbox_0',['vbox',['../gui__edit_8c.html#a4135ce280f2ff654540c78e33ce96228',1,'gui_edit.c']]]
 ];
