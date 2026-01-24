@@ -57,12 +57,15 @@ on_font_dialog_response(GtkDialog *dialog, int response_id, gpointer user_data)
 
 		if(font) {
 			// Saves new font to the settings
-			char *font_str = pango_font_description_to_string(font);
-			log_info(__FILE__, "Selected font: %s\n", font_str);
+			const char *family = pango_font_description_get_family(font);
+
+			// Get the font size in points
+			int size = pango_font_description_get_size(font); // in Pango units
+			int size_in_points = size / PANGO_SCALE;		  // convert to points
 
 			settings_state s = settings_get();
-			strcpy(s.font, font_str);
-			g_free(font_str);
+			strcpy(s.font_family, family);
+			s.font_size = size_in_points;
 			settings_set(&s);
 			int r = settings_file_save(); // saves settings to file
 			if(r != 1)
@@ -70,7 +73,7 @@ on_font_dialog_response(GtkDialog *dialog, int response_id, gpointer user_data)
 			settings_apply(); // applies current settings
 
 			// Update label on the font button
-			gtk_button_set_label(GTK_BUTTON(font_button), s.font);
+			gtk_button_set_label(GTK_BUTTON(font_button), s.font_family);
 		} else {
 			// should handle this
 			log_err(__FILE__, "Font not found");
@@ -180,7 +183,7 @@ gui_settings_init(GSimpleAction *action, GVariant *parameter, gpointer user_data
 	gtk_check_button_set_active(GTK_CHECK_BUTTON(checkbox_whitespace), s.whitespace);
 	updating_checkboxes_through_code = 0;
 	// Write font based on settings
-	gtk_button_set_label(GTK_BUTTON(font_button), s.font);
+	gtk_button_set_label(GTK_BUTTON(font_button), s.font_family);
 
 	gtk_window_present(GTK_WINDOW(settings_window));
 	log_info(__FILE__, "Created settings window");

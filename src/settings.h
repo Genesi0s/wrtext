@@ -10,7 +10,8 @@ typedef struct{
 	int whitespace;
 	int linenums;
 	int darkmode;
-	char font[128];
+	char font_family[128];
+	int font_size;
 }settings_state;
 
 
