@@ -65,7 +65,8 @@ settings_file_load()
 
 	// This list must be updated if the settings are updated
 	// and also the same list in the save function
-	Settings_Entry entries[] = { { "font", &settings.font, SETTINGS_STRING },
+	Settings_Entry entries[] = { { "font_family", &settings.font_family, SETTINGS_STRING },
+								 { "font_size", &settings.font_size, SETTINGS_INT },
 								 { "textwrap", &settings.textwrap, SETTINGS_INT },
 								 { "whitespace", &settings.whitespace, SETTINGS_INT },
 								 { "linenums", &settings.linenums, SETTINGS_INT },
@@ -93,8 +94,8 @@ settings_file_load()
 					break;
 				case SETTINGS_STRING:
 					if(strip_quotes(value)) { // if quotes found
-						strncpy(entries[i].ptr, value, sizeof(settings.font) - 1);
-						((char *)entries[i].ptr)[sizeof(settings.font) - 1] = '\0';
+						strncpy(entries[i].ptr, value, sizeof(settings.font_family) - 1);
+						((char *)entries[i].ptr)[sizeof(settings.font_family) - 1] = '\0';
 					}
 					// printf("%s", value);
 					break;
@@ -120,7 +121,8 @@ settings_file_save()
 	settings_state settings = settings_get();
 
 	// This list must be updated if the settings are updated
-	Settings_Entry entries[] = { { "font", &settings.font, SETTINGS_STRING },
+	Settings_Entry entries[] = { { "font_family", &settings.font_family, SETTINGS_STRING },
+								 { "font_size", &settings.font_size, SETTINGS_INT },
 								 { "textwrap", &settings.textwrap, SETTINGS_INT },
 								 { "whitespace", &settings.whitespace, SETTINGS_INT },
 								 { "linenums", &settings.linenums, SETTINGS_INT },
