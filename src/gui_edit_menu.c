@@ -3,6 +3,7 @@
 #include "file_dialog.h"
 #include "fmanager.h"
 #include "gui_about.h"
+#include "gui_alert.h"
 #include "gui_edit.h"
 #include "gui_settings.h"
 #include "logger.h"
@@ -39,6 +40,7 @@ gui_edit_menu_on_open(GSimpleAction *action, GVariant *parameter, gpointer user_
 			gui_edit_add_file(ef);
 			log_info(__FILE__, "Open selected: %s", ef->file_name);
 		} else {
+			gui_alert_error("Failed to load file %s", path);
 			log_err(__FILE__, "Failed to load file: %s", path);
 		}
 		g_free(path);

@@ -1,6 +1,7 @@
 
 #include "gui_edit.h"
 #include "editor_file.h"
+#include "gui_alert.h"
 #include "gui_edit_menu.h"
 #include "gui_settings.h"
 #include "logger.h"
@@ -140,6 +141,7 @@ log_file_list()
 GtkWidget *
 gui_edit_init(GtkApplication *app)
 {
+
 	// Load settings
 	int t = settings_file_load();
 	if(t != 1) {
@@ -161,6 +163,9 @@ gui_edit_init(GtkApplication *app)
 	gtk_application_window_set_show_menubar(GTK_APPLICATION_WINDOW(window), TRUE);
 
 	g_signal_connect(window, "destroy", G_CALLBACK(gui_edit_cleanup), NULL);
+
+	// Initialize alert window
+	gui_alert_init(window);
 
 	// Initialize menubar
 	gui_edit_menu_init(app);
