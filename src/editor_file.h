@@ -4,16 +4,19 @@
 */
 
 #pragma once
+#include <gtk/gtk.h>
 #include <stdlib.h>
 
-typedef struct{
+typedef struct {
 	char *file_name;
 	char *file_path;
 	int cursor_position;
 	char *contents;
 	unsigned long size;
 	unsigned long lines;
-}editor_file;
+	GtkTextBuffer *buffer;
+    GtkWidget *title_label;
+} editor_file;
 
 typedef size_t editor_file_id;
 
@@ -34,3 +37,15 @@ int editor_file_update_lines(editor_file *f);
 	@param f File
 */
 int editor_file_update_size(editor_file *f);
+
+/*!
+	@brief Updates the name of the file based on the file path
+	@param f File
+*/
+int editor_file_update_name(editor_file *f);
+
+/*!
+	@brief Updates the full content of the file based on the gtk buffer
+	@param f File
+*/
+int editor_file_update_content(editor_file *f);
