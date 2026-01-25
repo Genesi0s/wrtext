@@ -34,23 +34,13 @@ fmanager_load(char *file_path)
 	fclose(f); // Closes file
 
 	ef->size = fsize;
-	ef->file_path = file_path;
+	ef->file_path = strdup(file_path);
+	// ef->file_path = filepath; // WARNING: file_path may be freed by the caller of this function
+	// which would result in this memory region being invalid
+	// Recommended: make a copy of the path and require freeing on closing a file.
 
 	// finds filename
-	char *ls = file_path; // last slash
-	char *c = file_path;
-	int nl = 0;
-	while(*c != '\0') {
-		c++;
-		nl++;
-		if(*c == '/') {
-			ls = c + 1;
-			nl = 0;
-		}
-	}
-	// log_info(__FILE__, "length: %d, name:%s\n",nl,ls);
-	ef->file_name = calloc(1, nl + 1);
-	strcpy(ef->file_name, ls);
+	editor_file_update_name(ef);
 
 	editor_file_update_lines(ef);
 	return ef;
@@ -66,7 +56,9 @@ fmanager_save(editor_file *ef)
 	}
 	if(fwrite(ef->contents, ef->size, 1, f) != 1) {
 		log_err(__FILE__, "Error writing to %s", ef->file_path);
+		fclose(f);
 		return -1;
 	}
+	fclose(f);
 	return 0;
 }
