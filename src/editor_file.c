@@ -17,7 +17,7 @@ editor_file_delete(editor_file *f)
 
 	free(f->contents);
 
-	if (f->buffer) {
+	if(f->buffer) {
 		g_clear_object(&f->buffer);
 	}
 

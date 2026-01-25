@@ -12,6 +12,18 @@
 #include <stdlib.h>
 #include <string.h>
 
+// These two actions have a global reference because they need to be disabled when no files are
+// open
+GSimpleAction *g_save;
+GSimpleAction *g_save_as;
+
+void
+gui_edit_menu_enable_saving(gboolean b)
+{
+	g_simple_action_set_enabled(g_save, b);
+	g_simple_action_set_enabled(g_save_as, b);
+}
+
 /**
  * @brief Callback for the "open" action: show open-file dialog.
  *
@@ -119,7 +131,7 @@ gui_edit_menu_on_save_as(GSimpleAction *action, GVariant *parameter, gpointer us
 
 		// Update content
 		editor_file_update_content(ef);
-		
+
 		// Save file
 		int success = fmanager_save(ef);
 		if(success == 0) {
@@ -180,6 +192,11 @@ gui_edit_menu_init(GtkApplication *app)
 	GSimpleAction *action_save = g_simple_action_new("save", NULL);
 	GSimpleAction *action_about = g_simple_action_new("about", NULL);
 	GSimpleAction *action_settings = g_simple_action_new("settings", NULL);
+
+	// Make them global
+	g_save = action_save;
+	g_save_as = action_save_as;
+
 	// Link action to function
 	g_action_map_add_action(G_ACTION_MAP(app), G_ACTION(action_randfile));
 	g_action_map_add_action(G_ACTION_MAP(app), G_ACTION(action_new));

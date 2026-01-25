@@ -170,6 +170,8 @@ gui_edit_init(GtkApplication *app)
 	// Initialize menubar
 	gui_edit_menu_init(app);
 
+	gui_edit_menu_enable_saving(FALSE); // Disable file saving since no files are open
+
 	vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
 	gtk_window_set_child(GTK_WINDOW(window), vbox);
 
@@ -257,6 +259,7 @@ gui_edit_close_file(editor_file_id id)
 	} else {
 		// hide notebook instead
 		gtk_widget_hide(vbox);
+		gui_edit_menu_enable_saving(FALSE); // Disable file saving
 	}
 
 	// Free file memory
@@ -384,6 +387,7 @@ gui_edit_add_file(editor_file *f)
 		// Remove extra page and show
 		gtk_notebook_remove_page(GTK_NOTEBOOK(notebook), 0);
 		statusbar_update(file_list.files[0]); // Has to update status bar with new file
+		gui_edit_menu_enable_saving(TRUE);	  // Enable file saving
 		gtk_widget_show(vbox);
 	}
 
