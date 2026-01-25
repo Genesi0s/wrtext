@@ -56,7 +56,7 @@ file_dialog_open_file(GtkWindow *parent)
 	GtkFileChooserNative *native = gtk_file_chooser_native_new(
 		"Open File", parent, GTK_FILE_CHOOSER_ACTION_OPEN, "_Open", "_Cancel");
 
-	struct fd_cbdata cb = {0};
+	struct fd_cbdata cb = { 0 };
 	cb.native = native;
 	cb.done = FALSE;
 	cb.result = NULL;
@@ -96,7 +96,7 @@ file_dialog_save_file(GtkWindow *parent, const char *suggested_name)
 	if(suggested_name)
 		gtk_file_chooser_set_current_name(GTK_FILE_CHOOSER(native), suggested_name);
 
-	struct fd_cbdata cb = {0};
+	struct fd_cbdata cb = { 0 };
 	cb.native = native;
 	cb.done = FALSE;
 	cb.result = NULL;
@@ -108,7 +108,7 @@ file_dialog_save_file(GtkWindow *parent, const char *suggested_name)
 	/* Process events until dialog is done. */
 	while(!cb.done) {
 		if(!g_main_context_pending(g_main_context_default()))
-			usleep(1000);  /* 1ms sleep */
+			usleep(1000); /* 1ms sleep */
 		g_main_context_iteration(g_main_context_default(), FALSE);
 	}
 
@@ -138,7 +138,7 @@ file_dialog_create_file(GtkWindow *parent, const char *suggested_name)
 	if(suggested_name)
 		gtk_file_chooser_set_current_name(GTK_FILE_CHOOSER(native), suggested_name);
 
-	struct fd_cbdata cb = {0};
+	struct fd_cbdata cb = { 0 };
 	cb.native = native;
 	cb.done = FALSE;
 	cb.result = NULL;

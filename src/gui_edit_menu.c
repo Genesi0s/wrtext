@@ -28,8 +28,8 @@ gui_edit_menu_on_open(GSimpleAction *action, GVariant *parameter, gpointer user_
 	gtk_widget_set_sensitive(GTK_WIDGET(parent), FALSE);
 
 	char *path = file_dialog_open_file(parent);
-	
-	// Enables parent before adding the file so focus can be grabbed correctly. 
+
+	// Enables parent before adding the file so focus can be grabbed correctly.
 	// -> correction: before we couldn't type on open/new cerated files
 	gtk_widget_set_sensitive(GTK_WIDGET(parent), TRUE);
 

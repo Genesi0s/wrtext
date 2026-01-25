@@ -39,7 +39,8 @@ fmanager_load(char *file_path)
 	fclose(f); // Closes file
 
 	ef->size = fsize;
-	ef->file_path = strdup(file_path); // duplicates address otherwise could point to memory that has been freed
+	ef->file_path = strdup(
+		file_path); // duplicates address otherwise could point to memory that has been freed
 
 	// finds filename
 	char *ls = file_path; // last slash
