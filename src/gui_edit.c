@@ -299,6 +299,7 @@ on_click_file_close(GtkButton *button, gpointer data)
 {
 	if(gui_edit_close_file(*(editor_file_id *)data) == -1) {
 		// error
+		log_err(__FILE__, "Error closing file.");
 	}
 
 	// This pointer was allocated at the time of opening the file

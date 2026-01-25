@@ -37,8 +37,16 @@ gui_edit_menu_on_open(GSimpleAction *action, GVariant *parameter, gpointer user_
 	if(path) {
 		editor_file *ef = fmanager_load(path);
 		if(ef) {
-			gui_edit_add_file(ef);
-			log_info(__FILE__, "Open selected: %s", ef->file_name);
+			// Checks whether it's a correct UTF-8 string
+			gboolean valid = g_utf8_validate(ef->contents, ef->size, NULL);
+
+			if(!valid) {
+				gui_alert_error("File \"%s\" is not a valid UTF-8 string.", ef->file_name);
+				log_err(__FILE__, "File is not UTF-8: %s", path);
+			} else {
+				gui_edit_add_file(ef);
+				log_info(__FILE__, "Open selected: %s", ef->file_name);
+			}
 		} else {
 			gui_alert_error("Failed to load file %s", path);
 			log_err(__FILE__, "Failed to load file: %s", path);
