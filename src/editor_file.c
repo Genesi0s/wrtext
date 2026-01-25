@@ -1,5 +1,6 @@
 #include "editor_file.h"
 #include "logger.h"
+#include <string.h>
 
 int
 editor_file_delete(editor_file *f)
@@ -15,6 +16,10 @@ editor_file_delete(editor_file *f)
 	free(f->file_path);
 
 	free(f->contents);
+
+	if (f->buffer) {
+		g_clear_object(&f->buffer);
+	}
 
 	free(f);
 
@@ -40,5 +45,40 @@ int
 editor_file_update_size(editor_file *f)
 {
 
+	return 0;
+}
+
+int
+editor_file_update_name(editor_file *f)
+{
+	char *ls = f->file_path; // last slash
+	char *c = f->file_path;
+	int nl = 0;
+	while(*c != '\0') {
+		c++;
+		nl++;
+		if(*c == '/') {
+			ls = c + 1;
+			nl = 0;
+		}
+	}
+	// log_info(__FILE__, "length: %d, name:%s\n",nl,ls);
+	f->file_name = calloc(1, nl + 1);
+	strcpy(f->file_name, ls);
+	return 0;
+}
+
+int
+editor_file_update_content(editor_file *f)
+{
+	GtkTextIter start, end;
+	gtk_text_buffer_get_start_iter(f->buffer, &start);
+	gtk_text_buffer_get_end_iter(f->buffer, &end);
+
+	char *text = gtk_text_buffer_get_text(f->buffer, &start, &end, FALSE);
+
+	g_free(f->contents);
+	f->contents = text;
+	f->size = strlen(text);
 	return 0;
 }

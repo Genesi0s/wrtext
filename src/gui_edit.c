@@ -329,8 +329,8 @@ gui_edit_add_file(editor_file *f)
 	// Create new notebook page
 
 	// Load file contents into a text area
-	GtkTextBuffer *buff = gtk_text_buffer_new(NULL);
-	gtk_text_buffer_set_text(buff, f->contents, f->size);
+	f->buffer = gtk_text_buffer_new(NULL);
+	gtk_text_buffer_set_text(f->buffer, f->contents, f->size);
 
 	// Creates scrollable window
 	GtkWidget *scrolled_window = gtk_scrolled_window_new();
@@ -348,7 +348,7 @@ gui_edit_add_file(editor_file *f)
 								s.textwrap == 1 ? GTK_WRAP_CHAR : GTK_WRAP_NONE);
 
 	// Loads text buffer into textarea
-	gtk_text_view_set_buffer(GTK_TEXT_VIEW(text_area), buff);
+	gtk_text_view_set_buffer(GTK_TEXT_VIEW(text_area), f->buffer);
 
 	// Adds text area to scrollable window
 	gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scrolled_window), text_area);
@@ -362,6 +362,7 @@ gui_edit_add_file(editor_file *f)
 	// Create widgets of the page title
 	GtkWidget *title_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 2);
 	GtkWidget *title_name = gtk_label_new(f->file_name);
+	f->title_label = title_name;
 	GtkWidget *close_image = gtk_image_new_from_icon_name("window-close");
 
 	// Try to make them expand

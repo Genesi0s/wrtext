@@ -56,13 +56,43 @@ gui_edit_menu_on_open(GSimpleAction *action, GVariant *parameter, gpointer user_
 }
 
 /**
- * @brief Callback for the "save" action: show save-file dialog and create file.
+ * @brief Callback for the "save" action: saves file to its current path.
+ */
+static void
+gui_edit_menu_on_save(GSimpleAction *action, GVariant *parameter, gpointer user_data)
+{
+
+	GtkApplication *app = GTK_APPLICATION(user_data);
+	GtkWindow *parent = gtk_application_get_active_window(app);
+
+	// Disables parent!
+	gtk_widget_set_sensitive(GTK_WIDGET(parent), FALSE);
+
+	editor_file *ef = gui_edit_get_selected_file();
+
+	// Update content
+	editor_file_update_content(ef);
+
+	// Save the current file to its current path
+	int success = fmanager_save(ef);
+	if(success == 0) {
+		log_info(__FILE__, "Successfully saved file");
+	} else {
+		log_err(__FILE__, "Saving of file failed");
+	}
+
+	// Enables parent!
+	gtk_widget_set_sensitive(GTK_WIDGET(parent), TRUE);
+}
+
+/**
+ * @brief Callback for the "save_as" action: show save-file dialog and create file.
  *
  * If a path is chosen, an empty file is created (or truncated) so the application
  * can later write into it.
  */
 static void
-gui_edit_menu_on_save(GSimpleAction *action, GVariant *parameter, gpointer user_data)
+gui_edit_menu_on_save_as(GSimpleAction *action, GVariant *parameter, gpointer user_data)
 {
 	GtkApplication *app = GTK_APPLICATION(user_data);
 	GtkWindow *parent = gtk_application_get_active_window(app);
@@ -78,6 +108,26 @@ gui_edit_menu_on_save(GSimpleAction *action, GVariant *parameter, gpointer user_
 		log_info(__FILE__, "Save selected: %s", path);
 
 		// Implement file saving here
+		editor_file *ef = gui_edit_get_selected_file();
+
+		ef->file_path = strdup(path);
+
+		// Update name
+		g_free(ef->file_name);
+		editor_file_update_name(ef);
+		gtk_label_set_text(GTK_LABEL(ef->title_label), ef->file_name);
+
+		// Update content
+		editor_file_update_content(ef);
+		
+		// Save file
+		int success = fmanager_save(ef);
+		if(success == 0) {
+			log_info(__FILE__, "Successfully saved file");
+		} else {
+			log_err(__FILE__, "Saving of file failed");
+		}
+
 		g_free(path);
 	}
 	// Enables parent!
@@ -126,6 +176,7 @@ gui_edit_menu_init(GtkApplication *app)
 	GSimpleAction *action_randfile = g_simple_action_new("randfile", NULL);
 	GSimpleAction *action_new = g_simple_action_new("new", NULL);
 	GSimpleAction *action_open = g_simple_action_new("open", NULL);
+	GSimpleAction *action_save_as = g_simple_action_new("save_as", NULL);
 	GSimpleAction *action_save = g_simple_action_new("save", NULL);
 	GSimpleAction *action_about = g_simple_action_new("about", NULL);
 	GSimpleAction *action_settings = g_simple_action_new("settings", NULL);
@@ -133,6 +184,7 @@ gui_edit_menu_init(GtkApplication *app)
 	g_action_map_add_action(G_ACTION_MAP(app), G_ACTION(action_randfile));
 	g_action_map_add_action(G_ACTION_MAP(app), G_ACTION(action_new));
 	g_action_map_add_action(G_ACTION_MAP(app), G_ACTION(action_open));
+	g_action_map_add_action(G_ACTION_MAP(app), G_ACTION(action_save_as));
 	g_action_map_add_action(G_ACTION_MAP(app), G_ACTION(action_save));
 	g_action_map_add_action(G_ACTION_MAP(app), G_ACTION(action_about));
 	g_action_map_add_action(G_ACTION_MAP(app), G_ACTION(action_settings));
@@ -143,6 +195,7 @@ gui_edit_menu_init(GtkApplication *app)
 	// Open/save actions. Pass the GtkApplication as user_data so callbacks
 	// can obtain the active window with gtk_application_get_active_window(). */
 	g_signal_connect(action_open, "activate", G_CALLBACK(gui_edit_menu_on_open), app);
+	g_signal_connect(action_save_as, "activate", G_CALLBACK(gui_edit_menu_on_save_as), app);
 	g_signal_connect(action_save, "activate", G_CALLBACK(gui_edit_menu_on_save), app);
 	// Calls the function that activates the about window and passes it the main window
 	g_signal_connect(action_about, "activate", G_CALLBACK(gui_about_init),
@@ -165,6 +218,7 @@ gui_edit_menu_init(GtkApplication *app)
 		= g_menu_item_new("FileRand", "app.randfile"); // Link option to action
 	GMenuItem *item_new = g_menu_item_new("New...", "app.new");
 	GMenuItem *item_open = g_menu_item_new("Open...", "app.open");
+	GMenuItem *item_save_as = g_menu_item_new("Save As...", "app.save_as");
 	GMenuItem *item_save = g_menu_item_new("Save...", "app.save");
 	GMenuItem *item_about = g_menu_item_new("About", "app.about");
 	GMenuItem *item_settings = g_menu_item_new("Settings", "app.settings");
@@ -172,6 +226,7 @@ gui_edit_menu_init(GtkApplication *app)
 	// Add File submenu and randfile item
 	g_menu_append_item(menu_file_model, item_new);
 	g_menu_append_item(menu_file_model, item_open);
+	g_menu_append_item(menu_file_model, item_save_as);
 	g_menu_append_item(menu_file_model, item_save);
 	g_menu_append_item(menu_file_model, item_filerand);
 	g_menu_item_set_submenu(menu_file_menu, G_MENU_MODEL(menu_file_model));
