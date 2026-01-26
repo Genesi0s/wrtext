@@ -16,6 +16,16 @@
 */
 GtkWidget *gui_edit_init(GtkApplication *app);
 
+/*!
+	@brief Updates statusbar text with the data from the file passed as a parameter
+	@param f Pointer to file
+*/
+void gui_edit_statusbar_update(editor_file *f); // Might be a bad design decision to make this accessible to other modules
+
+/*!
+	@brief This function interates through every open file and updates it's title on the notebook based on whether there are unsaved changes. (Shows the asterisk in case)
+*/
+void gui_edit_update_titles();
 
 /*!
 	@brief Adds a file to the list of opened file so that the user may edit it

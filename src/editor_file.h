@@ -16,6 +16,7 @@ typedef struct {
 	unsigned long lines;
 	GtkTextBuffer *buffer;
     GtkWidget *title_label;
+	int to_save;
 } editor_file;
 
 typedef size_t editor_file_id;

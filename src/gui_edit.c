@@ -41,12 +41,35 @@ GtkWidget *statusbar;
 */
 GtkWidget *vbox;
 
-/*!
-	@brief Updates statusbar text with the data from the file passed as a parameter
-	@param f Pointer to file
-*/
 void
-statusbar_update(editor_file *f)
+gui_edit_update_titles()
+{
+
+	for(int i = 0; i < file_list.length; i++) {
+		GtkWidget *page = file_list.page_widget[i];
+		GtkWidget *tab = gtk_notebook_get_tab_label(GTK_NOTEBOOK(notebook), page);
+
+		// first child
+		GtkWidget *label = gtk_widget_get_first_child(tab);
+
+		// second child
+		// child = gtk_widget_get_next_sibling(child);
+
+		// now child is the label
+		if(GTK_IS_LABEL(label)) {
+			char buffer[256];
+			snprintf(buffer, sizeof(buffer), "%c%s", file_list.files[i]->to_save == 1 ? '*' : ' ',
+					 file_list.files[i]->file_name);
+			gtk_label_set_text(GTK_LABEL(label), buffer);
+
+		} else {
+			log_err(__FILE__, "wrong widget");
+		}
+	}
+}
+
+void
+gui_edit_statusbar_update(editor_file *f)
 {
 
 	char stat[64] = "";
@@ -57,6 +80,9 @@ statusbar_update(editor_file *f)
 	strcat(stat, "  -  Lines: ");
 	sprintf(lines_str, "%ld", f->lines);
 	strcat(stat, lines_str);
+
+	if(f->to_save)
+		strcat(stat, " [UNSAVED CHANGES] ");
 
 	gtk_label_set_text(GTK_LABEL(statusbar), stat);
 }
@@ -70,7 +96,7 @@ notebook_on_switchpage(GtkNotebook *notebook, GtkWidget *page, guint page_num, g
 	// Find editor file from page widget. Iterate through all files
 	for(int i = 0; i < file_list.length; i++) {
 		if(file_list.page_widget[i] == page) {
-			statusbar_update(file_list.files[i]);
+			gui_edit_statusbar_update(file_list.files[i]);
 			return;
 		}
 	}
@@ -85,6 +111,11 @@ textarea_on_insert_text(GtkTextBuffer *buffer, GtkTextIter *location, const char
 						gpointer user_data)
 {
 	editor_file *f = (editor_file *)user_data;
+	// If it's the first change to a file, register it and update all titles
+	if(!f->to_save) {
+		f->to_save = 1;
+		gui_edit_update_titles();
+	}
 	unsigned long lines_added = 0;
 
 	// Counts lines added
@@ -94,7 +125,7 @@ textarea_on_insert_text(GtkTextBuffer *buffer, GtkTextIter *location, const char
 	}
 	f->lines = f->lines + lines_added;
 
-	statusbar_update(f);
+	gui_edit_statusbar_update(f);
 }
 
 /*!
@@ -106,6 +137,12 @@ textarea_on_delete_range(GtkTextBuffer *buffer, GtkTextIter *start, GtkTextIter 
 						 gpointer user_data)
 {
 	editor_file *f = (editor_file *)user_data;
+	// If it's the first change to a file, register it and update all titles
+	if(!f->to_save) {
+		f->to_save = 1;
+		gui_edit_update_titles();
+	}
+
 	unsigned long lines_removed = 0;
 
 	// Counts lines removed
@@ -121,7 +158,7 @@ textarea_on_delete_range(GtkTextBuffer *buffer, GtkTextIter *start, GtkTextIter 
 	}
 	f->lines = f->lines - lines_removed;
 
-	statusbar_update(f);
+	gui_edit_statusbar_update(f);
 }
 
 void
@@ -386,8 +423,8 @@ gui_edit_add_file(editor_file *f)
 	if(page_n == 2 && gtk_widget_get_visible(vbox) == false) {
 		// Remove extra page and show
 		gtk_notebook_remove_page(GTK_NOTEBOOK(notebook), 0);
-		statusbar_update(file_list.files[0]); // Has to update status bar with new file
-		gui_edit_menu_enable_saving(TRUE);	  // Enable file saving
+		gui_edit_statusbar_update(file_list.files[0]); // Has to update status bar with new file
+		gui_edit_menu_enable_saving(TRUE);			   // Enable file saving
 		gtk_widget_show(vbox);
 	}
 

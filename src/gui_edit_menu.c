@@ -87,10 +87,16 @@ gui_edit_menu_on_save(GSimpleAction *action, GVariant *parameter, gpointer user_
 
 	// Save the current file to its current path
 	int success = fmanager_save(ef);
+
 	if(success == 0) {
-		log_info(__FILE__, "Successfully saved file");
+		ef->to_save = 0;
+		gui_edit_update_titles();
+
+		gui_edit_statusbar_update(ef);
+		log_info(__FILE__, "(save) Successfully saved file");
 	} else {
-		log_err(__FILE__, "Saving of file failed");
+		gui_alert_error("Error saving file \"%s\"", ef->file_name);
+		log_err(__FILE__, "(save) Saving of file failed");
 	}
 
 	// Enables parent!
@@ -112,35 +118,50 @@ gui_edit_menu_on_save_as(GSimpleAction *action, GVariant *parameter, gpointer us
 	// Disables parent!
 	gtk_widget_set_sensitive(GTK_WIDGET(parent), FALSE);
 
+	// Gets new path from file dialog
 	char *path = file_dialog_save_file(parent, NULL);
 	if(path) {
+
 		FILE *f = fopen(path, "w");
 		if(f)
 			fclose(f);
 		log_info(__FILE__, "Save selected: %s", path);
 
-		// Implement file saving here
+		// Find selected file
 		editor_file *ef = gui_edit_get_selected_file();
 
+		// Saves previous path
+		char *old_path = ef->file_path;
+
+		// Sets new path as the file_path of the editor_file
 		ef->file_path = strdup(path);
 
-		// Update name
+		// Updates name
 		g_free(ef->file_name);
 		editor_file_update_name(ef);
-		gtk_label_set_text(GTK_LABEL(ef->title_label), ef->file_name);
-
-		// Update content
+		// Updates content
 		editor_file_update_content(ef);
 
-		// Save file
+		// Tries saving
 		int success = fmanager_save(ef);
+
 		if(success == 0) {
-			log_info(__FILE__, "Successfully saved file");
+			// Saving worked, update statusbar and remove to_save flag
+			ef->to_save = 0;
+
+			gui_edit_statusbar_update(ef);
+			log_info(__FILE__, "(save as) Successfully saved file");
 		} else {
-			log_err(__FILE__, "Saving of file failed");
+			// Saving didn't work, revert to old path and filename
+			gui_alert_error("Error saving file \"%s\"", ef->file_name);
+			log_err(__FILE__, "(save as) Saving of file failed");
+			ef->file_path = old_path;
+			editor_file_update_name(ef);
 		}
 
 		g_free(path);
+
+		gui_edit_update_titles(); // Updates titles of files
 	}
 	// Enables parent!
 	gtk_widget_set_sensitive(GTK_WIDGET(parent), TRUE);
