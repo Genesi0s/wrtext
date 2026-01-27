@@ -30,6 +30,8 @@ settings_apply()
 	settings_state s = settings_get();
 	// Apply wrap
 	gui_edit_set_wrap(s.textwrap);
+	// Apply line numbers
+	gui_edit_set_line_numbers(s.linenums);
 
 	// log_info(__FILE__, "Applying font family [%s] with sizee [%d]\n",
 	// s.font_family,s.font_size);

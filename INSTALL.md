@@ -31,7 +31,7 @@ Then clone the GitHub repository
 ```https://github.com/gabsimoni/wrtext.git```
 
 And install the dependencies
-```brew install gtk4 gtk3 gcc```
+```brew install gcc gtk4 gtksourceview5 doxygen clang-format```
 
 ### Compilation
 Go in the folder containing the repository

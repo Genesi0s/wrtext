@@ -51,3 +51,5 @@ void gui_edit_add_random_file(GSimpleAction *action, GVariant *parameter, gpoint
 editor_file *gui_edit_get_selected_file();
 
 void gui_edit_set_wrap(int b);
+
+void gui_edit_set_line_numbers(int b);

@@ -1,6 +1,6 @@
 # These are found by running pkg-config, you better have it on your system
-CFLAGS = `pkg-config --cflags gtk4`
-LIBS = `pkg-config --libs gtk4`
+CFLAGS = `pkg-config --cflags gtk4 gtksourceview-5`
+LIBS = `pkg-config --libs gtk4 gtksourceview-5`
 
 SRC = ./src
 VER = 0.2

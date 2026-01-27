@@ -11,6 +11,7 @@
 #include <gtk/gtk.h>
 #include <stdlib.h>
 #include <string.h>
+#include <gtksourceview/gtksource.h>
 
 /*!
 	@brief Structure defining a list of files and mapping each one to a page number
@@ -405,27 +406,24 @@ gui_edit_add_file(editor_file *f)
 	// Create new notebook page
 
 	// Load file contents into a text area
-	f->buffer = gtk_text_buffer_new(NULL);
+	f->buffer = GTK_TEXT_BUFFER(gtk_source_buffer_new(NULL));
 	gtk_text_buffer_set_text(f->buffer, f->contents, f->size);
 
 	// Creates scrollable window
 	GtkWidget *scrolled_window = gtk_scrolled_window_new();
 
 	// Create text area with file contents
-	GtkWidget *text_area = gtk_text_view_new();
+	GtkWidget *text_area = gtk_source_view_new();
 
 	// Make text area fill the whole space
 	gtk_widget_set_hexpand(text_area, TRUE);
 	gtk_widget_set_vexpand(text_area, TRUE);
 
-	// Based on textwrap setting applies text wrap
+	// Based on textwrap and linenums settings applies text wrap and line numbers
 	settings_state s = settings_get();
 	gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(text_area),
-								s.textwrap == 1 ? GTK_WRAP_CHAR : GTK_WRAP_NONE);
-
-	// Loads text buffer into textarea
-	gtk_text_view_set_buffer(GTK_TEXT_VIEW(text_area), f->buffer);
-
+							s.textwrap == 1 ? GTK_WRAP_CHAR : GTK_WRAP_NONE);
+	gtk_source_view_set_show_line_numbers(GTK_SOURCE_VIEW(text_area), s.linenums == 1 ? TRUE : FALSE);
 	// Adds text area to scrollable window
 	gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scrolled_window), text_area);
 
@@ -539,5 +537,17 @@ gui_edit_set_wrap(int b)
 	for(int i = 0; i < file_list.length; i++) {
 		tarea = gtk_scrolled_window_get_child(GTK_SCROLLED_WINDOW(file_list.page_widget[i]));
 		gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(tarea), b == 1 ? GTK_WRAP_CHAR : GTK_WRAP_NONE);
+	}
+}
+
+void
+gui_edit_set_line_numbers(int b)
+{
+
+	// Loops through every page and sets line numbers
+	GtkWidget *tarea;
+	for(int i = 0; i < file_list.length; i++) {
+		tarea = gtk_scrolled_window_get_child(GTK_SCROLLED_WINDOW(file_list.page_widget[i]));
+		gtk_source_view_set_show_line_numbers(GTK_SOURCE_VIEW(tarea), b == 1 ? TRUE : FALSE);
 	}
 }
