@@ -2,6 +2,7 @@
 #include "gui_edit.h"
 #include "editor_file.h"
 #include "gui_alert.h"
+#include "gui_confirm.h"
 #include "gui_edit_menu.h"
 #include "gui_settings.h"
 #include "logger.h"
@@ -40,6 +41,20 @@ GtkWidget *statusbar;
 	@brief Vertical box holding the notebook and statusbar
 */
 GtkWidget *vbox;
+
+static gboolean
+on_close_request(GtkWindow *window, gpointer user_data)
+{
+	int file_index = -1;
+	for(int i = 0; i < file_list.length; i++) {
+		if(file_list.files[i]->to_save) { // If there's a file with unsaved changes
+			gui_confirm_show(-1);		  // closes the window if accepted
+			return TRUE;				  // blocks closing
+		}
+	}
+
+	return FALSE; // closes
+}
 
 void
 gui_edit_update_titles()
@@ -201,9 +216,13 @@ gui_edit_init(GtkApplication *app)
 
 	g_signal_connect(window, "destroy", G_CALLBACK(gui_edit_cleanup), NULL);
 
+	// Link to custom close function
+	g_signal_connect(window, "close-request", G_CALLBACK(on_close_request), NULL);
+
 	// Initialize alert window
 	gui_alert_init(window);
-
+	// Initialize confirm window
+	gui_confirm_init(window);
 	// Initialize menubar
 	gui_edit_menu_init(app);
 
@@ -337,13 +356,30 @@ gui_edit_close_file(editor_file_id id)
 void
 on_click_file_close(GtkButton *button, gpointer data)
 {
-	if(gui_edit_close_file(*(editor_file_id *)data) == -1) {
-		// error
-		log_err(__FILE__, "Error closing file.");
+	// Finds file from editor file id
+	editor_file *ef;
+	int file_index = -1;
+	for(int i = 0; i < file_list.length; i++) {
+		if(file_list.ids[i] == *(editor_file_id *)data) {
+			file_index = i;
+			break;
+		}
 	}
+	ef = file_list.files[file_index];
 
-	// This pointer was allocated at the time of opening the file
-	free(data);
+	// Calls the confirm dialog if file needs to be saved
+	if(ef->to_save) {
+		gui_confirm_show(*(editor_file_id *)data); // Calls confirm dialog
+												   // MEMORY LEAK HERE. WE DON'T FREE DATA.
+	} else {
+		// Closes file without confirm dialog
+		if(gui_edit_close_file(*(editor_file_id *)data) == -1) {
+			// error
+			log_err(__FILE__, "Error closing file.");
+		}
+		// This pointer was allocated at the time of opening the file
+		free(data);
+	}
 }
 
 editor_file_id
@@ -481,11 +517,14 @@ gui_edit_add_random_file(GSimpleAction *action, GVariant *parameter, gpointer us
 	fa->contents = malloc(3);
 	fa->size = 3;
 	fa->lines = 1;
+	fa->to_save = 0;
 
 	fa->contents[0] = '0' + (char)called;
 	fa->contents[1] = '0' + (char)called;
 	fa->contents[2] = '0' + (char)called;
 
+	gui_edit_update_titles();
+	gui_edit_statusbar_update(fa);
 	gui_edit_add_file(fa);
 
 	called++;
