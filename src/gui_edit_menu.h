@@ -13,3 +13,5 @@
 */
 GtkWidget *gui_edit_menu_init(GtkApplication *app);
 
+void gui_edit_menu_enable_saving(gboolean b);
+

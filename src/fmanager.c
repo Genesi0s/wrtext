@@ -38,24 +38,13 @@ fmanager_load(char *file_path)
 
 	fclose(f); // Closes file
 
+	ef->to_save = 0;
 	ef->size = fsize;
-	ef->file_path = strdup(file_path); // duplicates address otherwise could point to memory that has been freed
+	ef->file_path = strdup(
+		file_path); // duplicates address otherwise could point to memory that has been freed
 
 	// finds filename
-	char *ls = file_path; // last slash
-	char *c = file_path;
-	int nl = 0;
-	while(*c != '\0') {
-		c++;
-		nl++;
-		if(*c == '/') {
-			ls = c + 1;
-			nl = 0;
-		}
-	}
-	// log_info(__FILE__, "length: %d, name:%s\n",nl,ls);
-	ef->file_name = calloc(1, nl + 1);
-	strcpy(ef->file_name, ls);
+	editor_file_update_name(ef);
 
 	editor_file_update_lines(ef);
 	return ef;
@@ -69,9 +58,11 @@ fmanager_save(editor_file *ef)
 		log_err(__FILE__, "Error writing to %s", ef->file_path);
 		return -1;
 	}
-	if(fwrite(ef->contents, ef->size, 1, f) != 1) {
+	if(fwrite(ef->contents, ef->size, 1, f) != 1 && ef->size > 0) {
 		log_err(__FILE__, "Error writing to %s", ef->file_path);
+		fclose(f);
 		return -1;
 	}
+	fclose(f);
 	return 0;
 }

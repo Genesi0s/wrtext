@@ -1,6 +1,8 @@
 
 #include "gui_edit.h"
 #include "editor_file.h"
+#include "gui_alert.h"
+#include "gui_confirm.h"
 #include "gui_edit_menu.h"
 #include "gui_settings.h"
 #include "logger.h"
@@ -40,12 +42,49 @@ GtkWidget *statusbar;
 */
 GtkWidget *vbox;
 
-/*!
-	@brief Updates statusbar text with the data from the file passed as a parameter
-	@param f Pointer to file
-*/
+static gboolean
+on_close_request(GtkWindow *window, gpointer user_data)
+{
+	int file_index = -1;
+	for(int i = 0; i < file_list.length; i++) {
+		if(file_list.files[i]->to_save) { // If there's a file with unsaved changes
+			gui_confirm_show(-1);		  // closes the window if accepted
+			return TRUE;				  // blocks closing
+		}
+	}
+
+	return FALSE; // closes
+}
+
 void
-statusbar_update(editor_file *f)
+gui_edit_update_titles()
+{
+
+	for(int i = 0; i < file_list.length; i++) {
+		GtkWidget *page = file_list.page_widget[i];
+		GtkWidget *tab = gtk_notebook_get_tab_label(GTK_NOTEBOOK(notebook), page);
+
+		// first child
+		GtkWidget *label = gtk_widget_get_first_child(tab);
+
+		// second child
+		// child = gtk_widget_get_next_sibling(child);
+
+		// now child is the label
+		if(GTK_IS_LABEL(label)) {
+			char buffer[256];
+			snprintf(buffer, sizeof(buffer), "%c%s", file_list.files[i]->to_save == 1 ? '*' : ' ',
+					 file_list.files[i]->file_name);
+			gtk_label_set_text(GTK_LABEL(label), buffer);
+
+		} else {
+			log_err(__FILE__, "wrong widget");
+		}
+	}
+}
+
+void
+gui_edit_statusbar_update(editor_file *f)
 {
 
 	char stat[64] = "";
@@ -56,6 +95,9 @@ statusbar_update(editor_file *f)
 	strcat(stat, "  -  Lines: ");
 	sprintf(lines_str, "%ld", f->lines);
 	strcat(stat, lines_str);
+
+	if(f->to_save)
+		strcat(stat, " [UNSAVED CHANGES] ");
 
 	gtk_label_set_text(GTK_LABEL(statusbar), stat);
 }
@@ -69,7 +111,7 @@ notebook_on_switchpage(GtkNotebook *notebook, GtkWidget *page, guint page_num, g
 	// Find editor file from page widget. Iterate through all files
 	for(int i = 0; i < file_list.length; i++) {
 		if(file_list.page_widget[i] == page) {
-			statusbar_update(file_list.files[i]);
+			gui_edit_statusbar_update(file_list.files[i]);
 			return;
 		}
 	}
@@ -84,6 +126,11 @@ textarea_on_insert_text(GtkTextBuffer *buffer, GtkTextIter *location, const char
 						gpointer user_data)
 {
 	editor_file *f = (editor_file *)user_data;
+	// If it's the first change to a file, register it and update all titles
+	if(!f->to_save) {
+		f->to_save = 1;
+		gui_edit_update_titles();
+	}
 	unsigned long lines_added = 0;
 
 	// Counts lines added
@@ -93,7 +140,7 @@ textarea_on_insert_text(GtkTextBuffer *buffer, GtkTextIter *location, const char
 	}
 	f->lines = f->lines + lines_added;
 
-	statusbar_update(f);
+	gui_edit_statusbar_update(f);
 }
 
 /*!
@@ -105,6 +152,12 @@ textarea_on_delete_range(GtkTextBuffer *buffer, GtkTextIter *start, GtkTextIter 
 						 gpointer user_data)
 {
 	editor_file *f = (editor_file *)user_data;
+	// If it's the first change to a file, register it and update all titles
+	if(!f->to_save) {
+		f->to_save = 1;
+		gui_edit_update_titles();
+	}
+
 	unsigned long lines_removed = 0;
 
 	// Counts lines removed
@@ -120,7 +173,7 @@ textarea_on_delete_range(GtkTextBuffer *buffer, GtkTextIter *start, GtkTextIter 
 	}
 	f->lines = f->lines - lines_removed;
 
-	statusbar_update(f);
+	gui_edit_statusbar_update(f);
 }
 
 void
@@ -140,6 +193,7 @@ log_file_list()
 GtkWidget *
 gui_edit_init(GtkApplication *app)
 {
+
 	// Load settings
 	int t = settings_file_load();
 	if(t != 1) {
@@ -162,8 +216,17 @@ gui_edit_init(GtkApplication *app)
 
 	g_signal_connect(window, "destroy", G_CALLBACK(gui_edit_cleanup), NULL);
 
+	// Link to custom close function
+	g_signal_connect(window, "close-request", G_CALLBACK(on_close_request), NULL);
+
+	// Initialize alert window
+	gui_alert_init(window);
+	// Initialize confirm window
+	gui_confirm_init(window);
 	// Initialize menubar
 	gui_edit_menu_init(app);
+
+	gui_edit_menu_enable_saving(FALSE); // Disable file saving since no files are open
 
 	vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
 	gtk_window_set_child(GTK_WINDOW(window), vbox);
@@ -252,6 +315,7 @@ gui_edit_close_file(editor_file_id id)
 	} else {
 		// hide notebook instead
 		gtk_widget_hide(vbox);
+		gui_edit_menu_enable_saving(FALSE); // Disable file saving
 	}
 
 	// Free file memory
@@ -292,12 +356,30 @@ gui_edit_close_file(editor_file_id id)
 void
 on_click_file_close(GtkButton *button, gpointer data)
 {
-	if(gui_edit_close_file(*(editor_file_id *)data) == -1) {
-		// error
+	// Finds file from editor file id
+	editor_file *ef;
+	int file_index = -1;
+	for(int i = 0; i < file_list.length; i++) {
+		if(file_list.ids[i] == *(editor_file_id *)data) {
+			file_index = i;
+			break;
+		}
 	}
+	ef = file_list.files[file_index];
 
-	// This pointer was allocated at the time of opening the file
-	free(data);
+	// Calls the confirm dialog if file needs to be saved
+	if(ef->to_save) {
+		gui_confirm_show(*(editor_file_id *)data); // Calls confirm dialog
+												   // MEMORY LEAK HERE. WE DON'T FREE DATA.
+	} else {
+		// Closes file without confirm dialog
+		if(gui_edit_close_file(*(editor_file_id *)data) == -1) {
+			// error
+			log_err(__FILE__, "Error closing file.");
+		}
+		// This pointer was allocated at the time of opening the file
+		free(data);
+	}
 }
 
 editor_file_id
@@ -323,8 +405,8 @@ gui_edit_add_file(editor_file *f)
 	// Create new notebook page
 
 	// Load file contents into a text area
-	GtkTextBuffer *buff = gtk_text_buffer_new(NULL);
-	gtk_text_buffer_set_text(buff, f->contents, f->size);
+	f->buffer = gtk_text_buffer_new(NULL);
+	gtk_text_buffer_set_text(f->buffer, f->contents, f->size);
 
 	// Creates scrollable window
 	GtkWidget *scrolled_window = gtk_scrolled_window_new();
@@ -342,7 +424,7 @@ gui_edit_add_file(editor_file *f)
 								s.textwrap == 1 ? GTK_WRAP_CHAR : GTK_WRAP_NONE);
 
 	// Loads text buffer into textarea
-	gtk_text_view_set_buffer(GTK_TEXT_VIEW(text_area), buff);
+	gtk_text_view_set_buffer(GTK_TEXT_VIEW(text_area), f->buffer);
 
 	// Adds text area to scrollable window
 	gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scrolled_window), text_area);
@@ -356,6 +438,7 @@ gui_edit_add_file(editor_file *f)
 	// Create widgets of the page title
 	GtkWidget *title_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 2);
 	GtkWidget *title_name = gtk_label_new(f->file_name);
+	f->title_label = title_name;
 	GtkWidget *close_image = gtk_image_new_from_icon_name("window-close");
 
 	// Try to make them expand
@@ -376,7 +459,8 @@ gui_edit_add_file(editor_file *f)
 	if(page_n == 2 && gtk_widget_get_visible(vbox) == false) {
 		// Remove extra page and show
 		gtk_notebook_remove_page(GTK_NOTEBOOK(notebook), 0);
-		statusbar_update(file_list.files[0]); // Has to update status bar with new file
+		gui_edit_statusbar_update(file_list.files[0]); // Has to update status bar with new file
+		gui_edit_menu_enable_saving(TRUE);			   // Enable file saving
 		gtk_widget_show(vbox);
 	}
 
@@ -433,11 +517,14 @@ gui_edit_add_random_file(GSimpleAction *action, GVariant *parameter, gpointer us
 	fa->contents = malloc(3);
 	fa->size = 3;
 	fa->lines = 1;
+	fa->to_save = 0;
 
 	fa->contents[0] = '0' + (char)called;
 	fa->contents[1] = '0' + (char)called;
 	fa->contents[2] = '0' + (char)called;
 
+	gui_edit_update_titles();
+	gui_edit_statusbar_update(fa);
 	gui_edit_add_file(fa);
 
 	called++;
